@@ -42,13 +42,14 @@ class RepositoryControllerTest extends TestCase
 
     public function testUpdate(): void
     {
-        $repository = Repository::factory()->create(); 
+        $user = User::factory()->create();
+        $repository = Repository::factory()->create(['user_id' => $user->id]); 
         $data = [
             'url' => $this->faker->url,
             'description' => $this->faker->text,
         ]; 
 
-        $user = User::factory()->create();
+
 
         $this
             ->actingAs($user)
@@ -56,6 +57,63 @@ class RepositoryControllerTest extends TestCase
             ->assertRedirect("repositories/$repository->id/edit");
 
         $this->assertDatabaseHas('repositories', $data);
+    }
+
+    /********/
+
+    public function testValidateStore(): void
+    {
+        $user = User::factory()->create();
+
+        $this
+            ->actingAs($user)
+            ->post('repositories', [])
+            ->assertStatus(302)
+            ->assertSessionHasErrors(['url'], 'description');
+
+    }
+
+    public function testValidateUpdate(): void
+    {
+        $repository = Repository::factory()->create(); 
+        $user = User::factory()->create();
+
+        $this
+            ->actingAs($user)
+            ->put("repositories/$repository->id")
+            ->assertStatus(302)
+            ->assertSessionHasErrors(['url'], 'description');
+    }
+
+    public function testDestroy(): void
+    {
+        $repository = Repository::factory()->create(); 
+
+        $user = User::factory()->create();
+
+        $this
+            ->actingAs($user)
+            ->delete("repositories/$repository->id")
+            ->assertRedirect("repositories");
+
+        $this->assertDatabaseMissing('repositories', $repository->toArray());
+    }
+
+    public function testUpdatePolicy(): void
+    {
+        $user = User::factory()->create(); /// id = 1
+        $repository = Repository::factory()->create();  // user_id = 2
+
+        $data = [
+            'url' => $this->faker->url,
+            'description' => $this->faker->text,
+        ];
+
+        $this
+            ->actingAs($user)
+            ->put("repositories/$repository->id", $data)
+            ->assertStatus(403);
+
     }
 
 }
