@@ -23,6 +23,33 @@ class RepositoryControllerTest extends TestCase
         $this->put('repositories/1')->assertRedirect('login');      //update
     }
 
+    public function testIndexEmpty(): void
+    {
+        Repository::factory()->create(); // user_id = 1
+
+        $user = User::factory()->create(); // id = 2
+
+        $this->actingAs($user)
+            ->get('repositories')
+            ->assertStatus(200)
+            ->assertSee('No hay repositorios creados'); 
+
+    }
+
+    public function testIndexWithData(): void
+    {
+        $user = User::factory()->create(); // id = 1
+        $repository = Repository::factory()->create(['user_id' => $user->id]); // user_id = 1
+
+        $this
+            ->actingAs($user)
+            ->get('repositories')
+            ->assertStatus(200)
+            ->assertSee($repository->id) 
+            ->assertSee($repository->url); 
+
+    }
+
     public function testStore(): void
     {
         $data = [
@@ -87,9 +114,9 @@ class RepositoryControllerTest extends TestCase
 
     public function testDestroy(): void
     {
-        $repository = Repository::factory()->create(); 
-
+        
         $user = User::factory()->create();
+        $repository = Repository::factory()->create(['user_id' => $user->id]);
 
         $this
             ->actingAs($user)
@@ -112,6 +139,74 @@ class RepositoryControllerTest extends TestCase
         $this
             ->actingAs($user)
             ->put("repositories/$repository->id", $data)
+            ->assertStatus(403);
+
+    }
+
+    public function testDestroyPolicy(): void
+    {
+        $user = User::factory()->create(); /// id = 1
+        $repository = Repository::factory()->create();  // user_id = 2
+
+
+        $this
+            ->actingAs($user)
+            ->delete("repositories/$repository->id")
+            ->assertStatus(403);
+
+    }
+
+    // *
+
+
+    public function testShow(): void
+    {
+        $user = User::factory()->create();
+        $repository = Repository::factory()->create(['user_id' => $user->id]); 
+
+        $this
+            ->actingAs($user)
+            ->get("repositories/$repository->id")
+            ->assertStatus(200);
+
+    }
+
+    public function testShowPolicy(): void
+    {
+        $user = User::factory()->create(); /// id = 1
+        $repository = Repository::factory()->create();  // user_id = 2
+
+        $this
+            ->actingAs($user)
+            ->get("repositories/$repository->id")
+            ->assertStatus(403);
+
+    }
+
+    // *
+
+    public function testEdit(): void
+    {
+        $user = User::factory()->create();
+        $repository = Repository::factory()->create(['user_id' => $user->id]); 
+
+        $this
+            ->actingAs($user)
+            ->get("repositories/$repository->id/edit")
+            ->assertStatus(200)
+            ->assertSee($repository->url)
+            ->assertSee($repository->description);
+
+    }
+
+    public function testEditPolicy(): void
+    {
+        $user = User::factory()->create(); /// id = 1
+        $repository = Repository::factory()->create();  // user_id = 2
+
+        $this
+            ->actingAs($user)
+            ->get("repositories/$repository->id/edit")
             ->assertStatus(403);
 
     }
