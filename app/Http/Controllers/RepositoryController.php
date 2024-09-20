@@ -15,7 +15,6 @@ class RepositoryController extends Controller
         ]);
     }
 
-    
     public function show(Request $request, Repository $repository) {
 
         if($request->user()->id != $repository->user_id){
@@ -25,13 +24,8 @@ class RepositoryController extends Controller
         return view('repositories.show', compact('repository')); 
     }
 
-    public function edit(Request $request, Repository $repository) {
-
-        if($request->user()->id != $repository->user_id){
-            abort(403);
-        }
-        
-        return view('repositories.edit', compact('repository')); 
+    public function create(){
+        return view('repositories.create');
     }
 
     public function store(Request $request){
@@ -45,6 +39,15 @@ class RepositoryController extends Controller
 
         return redirect()->route('repositories.index'); 
 
+    }
+
+    public function edit(Request $request, Repository $repository) {
+
+        if($request->user()->id != $repository->user_id){
+            abort(403);
+        }
+        
+        return view('repositories.edit', compact('repository')); 
     }
 
     public function update(Request $request, Repository $repository){
